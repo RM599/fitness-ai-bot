@@ -77,10 +77,33 @@ async def handle_move(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(f"ℹ️ ویدیویی برای {move} ثبت نشده.\n\n{ai_text}")
 
+
 if __name__ == "__main__":
+    import os
+    from telegram.ext import ApplicationBuilder
+
+    TOKEN = os.getenv("TELEGRAM_TOKEN")
+    PORT = int(os.getenv("PORT", "10000"))         # Render خودش PORT را می‌دهد
+    WEBHOOK_BASE = os.getenv("WEBHOOK_BASE")        # مثلا: https://your-app.onrender.com
+    WEBHOOK_PATH = f"/{TOKEN}"
+
     app = ApplicationBuilder().token(TOKEN).build()
+
+    # همان هندلرهایی که قبلاً داشتی:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("setvideo", setvideo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_move))
-    print("🤖 Fitness AI bot is running (polling)…")
-    app.run_polling()
+
+    # اگر هنوز WEBHOOK_BASE ست نشده، خطا بده تا بعد از گرفتن URL سرویس ست کنی:
+    if not WEBHOOK_BASE:
+        print("❗ WEBHOOK_BASE ست نشده. بعد از ساخت Web Service آدرس Render را در آن بگذار و دوباره Deploy کن.")
+        raise SystemExit(1)
+
+    print("🚀 Running via webhook ...")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,                              # مسیر وب‌هوک: /<TOKEN>
+        webhook_url=WEBHOOK_BASE + WEBHOOK_PATH,     # آدرس کامل برای تلگرام
+    )
+# --- تا اینجا
